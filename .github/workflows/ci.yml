@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # تثبيت الـ NDK 25b
+      - name: Set up Android SDK and NDK
+        run: |
+          sudo mkdir -p /usr/local/lib/android/sdk/ndk
+          sudo curl -L https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -o ndk.zip
+          sudo unzip ndk.zip -d /usr/local/lib/android/sdk/ndk/
+          export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          export ANDROID_NDK=/usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          export ANDROID_NDK_LATEST_HOME=$ANDROID_NDK_HOME
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          export PATH=$PATH:$ANDROID_NDK_HOME
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            libunwind-dev \
+            zlib1g-dev \
+            libopencv-dev \
+            libtesseract-dev \
+            libleptonica-dev \
+            tesseract-ocr \
+            zlib1g-dev \
+            openssl \
+            libgdbm-dev \
+            libgdbm-compat-dev \
+            liblzma-dev \
+            libreadline-dev \
+            uuid-dev \
+            libgstreamer1.0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good
+          sudo apt-get install -y \
+            zip \
+            unzip \
+            autoconf \
+            libtool \
+            pkg-config \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            automake
+
+      - name: Set up Java 17 required by Gradle
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install pip dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
+          pip install opencv-python-headless numpy httpx tensorflow==2.4.0 keras-ocr kivy==2.3.0 kivymd==1.1.1 pillow==10.3.0
+
+      - name: Clean previous builds
+        run: buildozer android clean || echo "Failed to clean, continuing..."
+
+      - name: Build with Buildozer
+        run: |
+          yes | buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: APK
+          path: bin/*.apk
+
+      - name: Upload Build Log
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-log
+          path: build.log || echo "No build log found, skipping upload"
