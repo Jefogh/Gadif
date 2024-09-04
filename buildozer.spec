@@ -49,7 +49,7 @@ android.allow_backup = True
 android.debug_artifact = apk
 
 # Use a specific NDK version for compatibility
-android.ndk = 25d
+android.ndk = r21d
 
 [buildozer]
 
