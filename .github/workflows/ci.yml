@@ -77,19 +77,17 @@ jobs:
           pip install buildozer cython==0.29.33
           pip install opencv-python-headless numpy httpx tensorflow==2.4.0 keras-ocr kivy==2.3.0 kivymd==1.1.1 pillow==10.3.0
 
-      - name: Clean previous builds
-        run: buildozer android clean || echo "Failed to clean, continuing..."
-
-      - name: Set up Android SDK and NDK
+      - name: Download and set up Android NDK manually
         run: |
-          sudo mkdir -p /usr/local/lib/android/sdk/ndk
-          sudo curl -L https://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip -o ndk.zip
-          sudo unzip ndk.zip -d /usr/local/lib/android/sdk/ndk/
-          export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/android-ndk-r21d
-          export ANDROID_NDK=/usr/local/lib/android/sdk/ndk/android-ndk-r21d
-          export ANDROID_NDK_LATEST_HOME=$ANDROID_NDK_HOME
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export PATH=$PATH:$ANDROID_NDK_HOME
+          NDK_VERSION=r21d
+          NDK_HOME=$HOME/android-ndk-$NDK_VERSION
+          mkdir -p $NDK_HOME
+          curl -L https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip -o ndk.zip
+          unzip ndk.zip -d $NDK_HOME
+          export ANDROID_NDK_HOME=$NDK_HOME/android-ndk-$NDK_VERSION
+          export ANDROID_NDK=$ANDROID_NDK_HOME
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$ANDROID_NDK_HOME
 
       - name: Build with Buildozer
         run: |
